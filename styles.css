@@ -1,0 +1,230 @@
+:root {
+    --bg-color: #111111;
+    --panel-bg: #1f1f1f;
+    --text-color: #ffffff;
+    --accent: #1ba1e2;
+    --font-family: "Segoe UI", -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden; /* Stop whole page from scrolling */
+}
+
+.metro-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+    padding: 40px 60px 0 60px;
+}
+
+.metro-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 30px;
+    flex-shrink: 0; /* Prevents header from shrinking */
+}
+
+.metro-scroll-area {
+    flex-grow: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 40px; /* Space for horizontal scrollbar */
+}
+
+.metro-header h1 {
+    font-weight: 300;
+    font-size: 3.5rem;
+    margin: 0;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Authentication (Kept from previous version) */
+.metro-auth-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: var(--bg-color);
+    display: flex; justify-content: center; align-items: center; z-index: 2000;
+}
+.metro-auth-box {
+    width: 100%; max-width: 400px; padding: 40px; background-color: var(--panel-bg); display: flex; flex-direction: column; gap: 15px;
+}
+.metro-auth-box h2 { font-weight: 300; font-size: 2.5rem; margin: 0 0 20px 0; }
+.metro-error { color: #e51400; font-size: 0.9rem; min-height: 20px; margin: 0; }
+
+/* Inputs and Buttons */
+.metro-input {
+    background-color: #333; border: 2px solid transparent; color: white;
+    padding: 10px 15px; font-size: 1.1rem; font-family: var(--font-family);
+    outline: none; transition: border-color 0.2s; width: 100%; box-sizing: border-box; margin-bottom: 15px;
+}
+.metro-input:focus { background-color: white; color: black; border-color: var(--accent); }
+
+.metro-btn {
+    background-color: var(--accent); color: white; border: none; padding: 12px 24px;
+    font-size: 1.2rem; cursor: pointer; font-family: var(--font-family);
+    transition: transform 0.1s, opacity 0.2s;
+}
+.metro-btn:active { transform: scale(0.97); }
+.metro-btn:hover { opacity: 0.9; }
+
+.metro-btn-small {
+    background-color: #333; color: white; border: none; padding: 8px 15px; cursor: pointer;
+}
+.metro-btn-small:hover { background-color: var(--accent); }
+.delete-btn { background-color: #e51400; }
+
+/* Grid & Tiles */
+.tile-grid {
+    display: grid;
+    grid-auto-columns: 150px;
+    grid-template-rows: repeat(4, 150px); /* 4 standard rows tall */
+    grid-auto-flow: column dense;
+    gap: 12px;
+    height: 100%; /* calc(100vh - 160px); */
+    width: max-content;
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    transition: transform 0.1s;
+    background-size: cover;
+    background-position: center;
+    box-sizing: border-box;
+}
+.tile:active { transform: scale(0.95); }
+
+/* Apply a dark gradient overlay when a cover image exists so text remains readable */
+.tile.has-cover::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 100%);
+    z-index: 1;
+}
+
+.tile-content, .tile-footer { position: relative; z-index: 2; }
+
+/* Explicit Size Classes with chained specificity */
+.tile.tile-small {
+    grid-column: span 1;
+    grid-row: span 1;
+    padding: 6px;
+}
+
+/* Hide small details on quarter tiles so text fits */
+.tile.tile-small .tile-content p,
+.tile.tile-small .tile-footer .rating {
+    display: none;
+}
+
+.tile.tile-small .tile-content h2 {
+    font-size: 0.85rem;
+    line-height: 1.1;
+}
+
+.tile.tile-small .tile-footer .badge {
+    font-size: 0.65rem;
+    padding: 1px 3px;
+}
+
+.tile.tile-medium {
+    grid-column: span 2;
+    grid-row: span 2;
+    padding: 16px;
+}
+
+.tile.tile-wide {
+    grid-column: span 4;
+    grid-row: span 2;
+    padding: 16px;
+}
+
+.tile.tile-large {
+    grid-column: span 4;
+    grid-row: span 4;
+    padding: 20px;
+}
+
+.tile-content h2 { margin: 0; font-weight: 400; font-size: 1.4rem; line-height: 1.2; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+.tile-content p { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+.tile-footer { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.8rem; font-weight: 600; }
+.badge { background: rgba(0, 0, 0, 0.6); padding: 3px 6px; }
+
+/* Sliding Panels (Windows 8 Charms-style) */
+.metro-panel {
+    position: fixed; top: 0; right: -500px; width: 100%; max-width: 450px; height: 100vh;
+    background-color: var(--panel-bg); box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+    transition: right 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); z-index: 1000;
+    display: flex; flex-direction: column;
+}
+.metro-panel.open { right: 0; }
+
+.panel-header { padding: 30px; display: flex; align-items: center; gap: 20px; background: #2a2a2a; }
+.panel-header h2 { font-weight: 300; font-size: 2rem; margin: 0; }
+.back-btn {
+    background: transparent; border: 2px solid white; border-radius: 50%; color: white;
+    width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.back-btn:hover { background: white; color: black; }
+
+.panel-content { padding: 30px; flex-grow: 1; overflow-y: auto; }
+.panel-footer { padding: 20px 30px; background: #2a2a2a; display: flex; gap: 10px; justify-content: flex-end; }
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row .metro-input {
+    margin-bottom: 0;
+}
+
+label { display: block; margin-bottom: 5px; opacity: 0.8; font-size: 0.9rem; }
+
+.detail-grid p { margin: 10px 0; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
+.detail-grid span { display: block; font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; margin-bottom: 2px; }
+
+.sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.metro-select-small {
+    background-color: #2a2a2a;
+    color: white;
+    border: 1px solid #444;
+    padding: 4px 8px;
+    font-family: var(--font-family);
+    outline: none;
+    cursor: pointer;
+}
+
+.metro-select-small:focus {
+    border-color: var(--accent);
+}

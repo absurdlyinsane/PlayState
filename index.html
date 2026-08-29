@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games Library</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay" class="metro-auth-overlay">
+        <div class="metro-auth-box">
+            <h2>Sign In</h2>
+            <input type="email" id="email" class="metro-input" placeholder="Email address" required>
+            <input type="password" id="password" class="metro-input" placeholder="Password" required>
+            <button id="login-btn" class="metro-btn">Sign In</button>
+            <p id="auth-error" class="metro-error"></p>
+        </div>
+    </div>
+
+    <div class="metro-container">
+        <header class="metro-header">
+    <h1>Games</h1>
+
+    <div class="sort-controls">
+        <label>Sort By:</label>
+        <select id="sort-1" class="metro-select-small">
+            <option value="name">Name</option>
+            <option value="personal_rating" selected>Rating</option>
+            <option value="year">Year</option>
+            <option value="play_status">Status</option>
+        </select>
+        <select id="sort-2" class="metro-select-small">
+            <option value="name">Name</option>
+            <option value="personal_rating">Rating</option>
+            <option value="year" selected>Year</option>
+            <option value="play_status">Status</option>
+        </select>
+        <select id="sort-3" class="metro-select-small">
+            <option value="name" selected>Name</option>
+            <option value="personal_rating">Rating</option>
+            <option value="year">Year</option>
+            <option value="play_status">Status</option>
+        </select>
+    </div>
+
+    <div class="header-controls">
+        <span id="connection-status">Connecting...</span>
+        <button id="add-game-btn" class="metro-btn-small" style="display: none;">+ Add Game</button>
+        <button id="logout-btn" class="metro-btn-small" style="display: none;">Logout</button>
+    </div>
+</header>
+
+        <div class="metro-scroll-area">
+            <main class="tile-grid" id="games-grid"></main>
+        </div>
+    </div>
+
+    <!-- Sliding Details Panel -->
+    <div id="details-panel" class="metro-panel">
+        <div class="panel-header">
+            <button class="back-btn" id="close-details">←</button>
+            <h2 id="detail-title">Game Title</h2>
+        </div>
+        <div class="panel-content">
+            <img id="detail-cover" src="" alt="Cover" style="width:100%; max-height: 200px; object-fit: cover; display: none; margin-bottom: 20px;">
+            <div id="detail-info" class="detail-grid"></div>
+        </div>
+        <div class="panel-footer">
+            <button id="edit-game-btn" class="metro-btn">Edit</button>
+            <button id="delete-game-btn" class="metro-btn delete-btn">Delete</button>
+        </div>
+    </div>
+
+    <!-- Sliding Form Panel -->
+    <div id="form-panel" class="metro-panel">
+        <div class="panel-header">
+            <button class="back-btn" id="close-form">←</button>
+            <h2 id="form-title">Add Game</h2>
+        </div>
+        <div class="panel-content">
+            <form id="game-form">
+                <input type="hidden" id="game-id">
+                
+                <label>Name</label>
+                <input type="text" id="game-name" name="name" class="metro-input" required>
+                
+                <label>Publisher</label>
+                <input type="text" id="game-publisher" name="publisher" class="metro-input">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Year</label>
+                        <input type="number" id="game-year" name="year" class="metro-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Rating (0-10)</label>
+                        <input type="number" id="game-rating" name="personal_rating" class="metro-input" step="0.1" max="10">
+                    </div>
+                </div>
+
+                <!-- Statuses -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Play Status</label>
+                        <select id="game-status" name="play_status" class="metro-input">
+                            <option value="UNPLAYED">Unplayed</option>
+                            <option value="BACKLOG">Backlog</option>
+                            <option value="PLAYING">Playing</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="ON_HOLD">On Hold</option>
+                            <option value="ABANDONED">Abandoned</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ownership</label>
+                        <input type="text" id="game-ownership" name="ownership" class="metro-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Acquisition Status</label>
+                        <input type="text" id="game-acquisition-status" class="metro-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Permanent Retention</label>
+                        <div style="margin-top: 10px;">
+                            <input type="checkbox" id="game-permanent-retention"> <label for="game-permanent-retention">Keep Permanently</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Installation & Storage -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Installer State</label>
+                        <input type="text" id="game-installer-state" class="metro-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Installation State</label>
+                        <input type="text" id="game-installation-state" class="metro-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Game Storage (GiB)</label>
+                        <input type="number" id="game-storage" class="metro-input" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Installer Storage (GiB)</label>
+                        <input type="number" id="game-installer-storage" class="metro-input" step="0.01">
+                    </div>
+                </div>
+
+                <!-- Platforms -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Original Platform</label>
+                        <input type="text" id="game-original-platform" class="metro-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Runtime Platform</label>
+                        <input type="text" id="game-runtime-platform" class="metro-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Rent Platform</label>
+                        <input type="text" id="game-rent-platform" class="metro-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Gamepad Support</label>
+                        <input type="text" id="game-gamepad-support" class="metro-input">
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Main Story (%)</label>
+                        <input type="number" id="game-main-progress" class="metro-input" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Side Story (%)</label>
+                        <input type="number" id="game-side-progress" class="metro-input" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Game (%)</label>
+                        <input type="number" id="game-full-progress" class="metro-input" min="0" max="100">
+                    </div>
+                </div>
+
+                <label>Patch Requirements</label>
+                <input type="text" id="game-patch-requirements" class="metro-input">
+
+                <label>System Tags (Ctrl/Cmd+Click to select multiple)</label>
+                <select id="game-system-tags" class="metro-input" multiple style="height: 100px;">
+                    <option value="FAVORITE">Favorite</option>
+                    <option value="MULTIPLAYER">Multiplayer</option>
+                    <option value="SINGLEPLAYER">Singleplayer</option>
+                    <option value="MODDED">Modded</option>
+                    <option value="EMULATED">Emulated</option>
+                    <!-- Add more options here matching your PocketBase schema values -->
+                </select>
+
+                <label>Cover Image</label>
+                <input type="file" id="game-cover" name="cover" class="metro-input" accept="image/*">
+            </form>
+        </div>
+        <div class="panel-footer">
+            <button id="save-game-btn" class="metro-btn">Save</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
