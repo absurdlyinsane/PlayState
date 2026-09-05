@@ -1,221 +1,1634 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Games Library</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlayState</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/segoe-ui@5.0.0/index.css">
+<style>
+:root {
+    --bg-color: #111111;
+    --panel-bg: #1f1f1f;
+    --text-color: #ffffff;
+    --accent: #1ba1e2;
+    --font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    --pad: 60px;
+    --gap: 12px;
+    --tile-size: 150px;
+    --grid-rows: 4;
+}
+
+@media (max-width: 1024px) {
+    :root { --pad: 40px; --gap: 10px; --tile-size: 140px; --grid-rows: 3; }
+}
+@media (max-width: 768px) {
+    :root { --pad: 30px; --gap: 10px; --tile-size: 130px; --grid-rows: 3; }
+}
+@media (max-width: 600px) {
+    :root { --pad: 20px; --gap: 8px; --tile-size: 120px; --grid-rows: 2; }
+}
+@media (max-width: 400px) {
+    :root { --pad: 15px; --gap: 6px; --tile-size: 100px; --grid-rows: 2; }
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    font-weight: 300;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; background-color: #111; }
+::-webkit-scrollbar-thumb { background-color: #333; border: 1px solid #111; }
+::-webkit-scrollbar-thumb:hover { background-color: #555; }
+
+/* ============ AUTH OVERLAY ============ */
+.metro-auth-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+}
+.metro-auth-box {
+    background: var(--panel-bg);
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+}
+.metro-auth-box h2 {
+    font-weight: 300;
+    font-size: 2.5rem;
+    margin: 0 0 30px 0;
+}
+
+/* ============ INPUTS & BUTTONS ============ */
+.metro-input {
+    background-color: #333;
+    border: 2px solid transparent;
+    color: white;
+    padding: 10px 15px;
+    font-size: 1.05rem;
+    font-family: var(--font-family);
+    outline: none;
+    transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    border-radius: 0;
+}
+.metro-input:focus {
+    background-color: white;
+    color: black;
+    border-color: var(--accent);
+}
+.metro-btn {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1.15rem;
+    cursor: pointer;
+    font-family: var(--font-family);
+    transition: transform 0.1s, opacity 0.2s;
+    border-radius: 0;
+    font-weight: 400;
+}
+.metro-btn:active { transform: scale(0.97); }
+.metro-btn:hover { opacity: 0.9; }
+.metro-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.metro-btn-small {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 0;
+    font-weight: 400;
+    font-family: var(--font-family);
+    font-size: 0.95rem;
+}
+.metro-btn-small:hover { background-color: var(--accent); }
+.delete-btn { background-color: #e51400; }
+.metro-error { color: #e51400; min-height: 20px; margin-top: 10px; font-size: 0.9rem; }
+.metro-hint { color: #888; font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px; }
+
+select.metro-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='292.4' height='292.4'%3E%3Cpath fill='%23FFFFFF' d='M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: 12px auto;
+    padding-right: 40px;
+}
+select.metro-input option { background-color: #1f1f1f; color: white; }
+
+input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px;
+    background-color: #333;
+    border: 2px solid #555;
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    position: relative;
+}
+input[type="checkbox"]:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px; top: 1px;
+    width: 4px; height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+input[type="file"].metro-input { padding: 6px; }
+input[type="file"].metro-input::file-selector-button {
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    margin-right: 15px;
+    cursor: pointer;
+}
+input[type="file"].metro-input::file-selector-button:hover { background-color: var(--accent); }
+
+/* ============ VIEWS ============ */
+.view-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 40px var(--pad) 0 var(--pad);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.metro-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.metro-header h1 {
+    font-weight: 300;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    margin: 0;
+    color: white;
+}
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+    flex: 1;
+}
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+#connection-status { font-size: 0.9rem; opacity: 0.7; }
+
+.back-btn {
+    background: transparent;
+    border: 2px solid #555;
+    border-radius: 50%;
+    color: #ccc;
+    width: 44px; height: 44px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.back-btn:hover { background: white; color: black; border-color: white; }
+
+/* ============ SELECTOR ============ */
+#view-selector { justify-content: flex-start; overflow-y: auto; }
+#view-selector h1 {
+    font-weight: 300;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    margin: 8vh 0 30px 0;
+    flex-shrink: 0;
+}
+.selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--gap);
+    width: 100%;
+    max-width: 1200px;
+    align-content: start;
+}
+.selector-tile {
+    background-color: #333;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    border: 3px solid transparent;
+    aspect-ratio: 5/3;
+    box-sizing: border-box;
+}
+.selector-tile.active { background-color: var(--accent); }
+.selector-tile:hover { outline: 3px solid rgba(255,255,255,0.4); outline-offset: -3px; }
+.selector-tile:active { transform: scale(0.97); }
+.selector-tile.disabled { opacity: 0.5; cursor: not-allowed; }
+.selector-tile h2 { margin: 0; font-weight: 300; font-size: clamp(1.3rem, 3vw, 2rem); color: white; }
+.selector-tile p { margin: 5px 0 0 0; opacity: 0.8; font-size: 0.9rem; }
+
+/* ============ DASHBOARD ============ */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(180px, auto);
+    gap: var(--gap);
+    flex-grow: 1;
+    padding-bottom: 100px;
+    overflow-y: auto;
+    min-height: 0;
+    align-content: start;
+}
+.dash-tile {
+    background-color: var(--panel-bg);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+.dash-tile h3 {
+    margin: 0 0 15px 0;
+    font-weight: 300;
+    font-size: 1.3rem;
+    color: white;
+    opacity: 0.9;
+    padding-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.currently-playing { grid-column: span 2; grid-row: span 2; background-color: #1f1f1f; border-top: 4px solid #1ba1e2; min-height: 380px; }
+.recommended-next { grid-column: span 1; grid-row: span 1; background-color: #00aba9; }
+.stats { grid-column: span 1; grid-row: span 1; background-color: #339933; }
+.notes-tile { grid-column: span 2; grid-row: span 1; background-color: #a20025; }
+.settings-tile { grid-column: span 2; grid-row: span 1; background-color: #555; }
+
+@media (max-width: 1024px) {
+    .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+    .currently-playing { grid-column: span 2; min-height: 340px; }
+    .recommended-next, .stats { grid-column: span 1; }
+    .notes-tile, .settings-tile { grid-column: span 1; }
+}
+@media (max-width: 600px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .currently-playing, .recommended-next, .stats, .notes-tile, .settings-tile { grid-column: span 1; min-height: 180px; }
+}
+
+.playing-tile-grid {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-auto-rows: 120px;
+    gap: 8px;
+    align-content: start;
+}
+.playing-tile-grid .tile {
+    aspect-ratio: 1;
+    padding: 8px !important;
+}
+.playing-tile-grid .tile .tile-content p,
+.playing-tile-grid .tile .tile-footer .rating { display: none; }
+.playing-tile-grid .tile .tile-content h2 { font-size: 0.85rem; line-height: 1.1; }
+.playing-tile-grid .tile .tile-footer .badge { font-size: 0.65rem; padding: 1px 3px; }
+
+.dash-list { flex-grow: 1; overflow-y: auto; }
+.dash-item {
+    background: rgba(255,255,255,0.05);
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-left: 4px solid transparent;
+}
+.dash-item:hover { background: rgba(255,255,255,0.1); border-left-color: var(--accent); }
+
+.notes-tile textarea {
+    width: 100%; flex-grow: 1;
+    background: transparent;
+    color: white;
+    border: none; outline: none;
+    font-family: var(--font-family);
+    font-size: 1rem;
+    resize: none;
+}
+.notes-tile textarea::placeholder { color: rgba(255,255,255,0.5); }
+
+.stat-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1rem; flex-wrap: wrap; gap: 5px; }
+.stat-line span { opacity: 0.8; }
+.stat-line strong { color: white; }
+
+/* ============ UNIFIED TOGGLE BUTTON ============ */
+#library-toggle-btn {
+    position: fixed;
+    bottom: 25px;
+    left: var(--pad);
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.35s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.2s, background-color 0.3s;
+    z-index: 900;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+}
+#library-toggle-btn.visible { opacity: 1; pointer-events: auto; }
+#library-toggle-btn:hover { background-color: #148bbf; }
+#library-toggle-btn:active { transform: scale(0.92); }
+#library-toggle-btn.open { transform: rotate(180deg); }
+
+/* ============ LIBRARY ============ */
+.slide-up-panel {
+    position: fixed;
+    bottom: -100vh;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-color);
+    transition: bottom 0.35s cubic-bezier(0.1, 0.9, 0.2, 1);
+    z-index: 600;
+    display: flex;
+    flex-direction: column;
+}
+.slide-up-panel.open { bottom: 0; }
+
+.library-header {
+    padding: 30px var(--pad) 0 var(--pad);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+.library-header h1 {
+    font-weight: 300;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    margin: 0;
+}
+
+.sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    opacity: 0.9;
+    flex-wrap: wrap;
+}
+.metro-select-small {
+    appearance: none; -webkit-appearance: none;
+    background-color: #2a2a2a;
+    color: white;
+    border: 1px solid #444;
+    padding: 6px 24px 6px 10px;
+    font-family: var(--font-family);
+    outline: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='292.4' height='292.4'%3E%3Cpath fill='%23FFFFFF' d='M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px top 50%;
+    background-size: 10px auto;
+}
+.metro-select-small:focus { border-color: var(--accent); }
+.metro-select-small option { background-color: #2a2a2a; color: white; }
+
+.library-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Scroll area: takes remaining space, scrolls both directions */
+.metro-scroll-area {
+    flex-grow: 1;
+    height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    padding: 20px var(--pad) 20px var(--pad);
+    min-height: 0;
+}
+
+/* Tile grid: Let grid-auto-rows handle the height strictly */
+.tile-grid {
+    display: grid;
+    grid-auto-columns: var(--tile-size);
+    grid-auto-rows: var(--tile-size); /* Every row is strictly this height */
+    grid-auto-flow: column dense;
+    gap: var(--gap);
+    width: max-content;
+    align-content: start;
+    /* Removed the fixed calc() height to prevent container shrinking */
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    border: 3px solid transparent;
+    transition: transform 0.1s;
+    color: white;
+    
+    /* Force tile to fill the grid cell exactly */
+    width: 100%;
+    height: 100%; 
+    box-sizing: border-box; /* Ensures the 3px border doesn't cause overflow/overlap */
+}
+.tile-bg {
+    position: absolute; inset: 0;
+    transition: filter 0.2s ease;
+    z-index: 0;
+}
+.tile.has-cover .tile-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 100%);
+}
+.tile-content, .tile-footer, .tile-extra { position: relative; z-index: 2; pointer-events: none; }
+.tile-extra { opacity: 0; transition: opacity 0.2s ease; font-size: 0.8rem; margin-top: 8px; }
+.tile:hover { outline: 3px solid rgba(255,255,255,0.4); outline-offset: -3px; }
+.tile:active { transform: scale(0.97); }
+.tile:hover .tile-bg { filter: blur(4px); }
+.tile:hover .tile-extra { opacity: 1; }
+
+.tile.tile-small { grid-column: span 1; grid-row: span 1; padding: 6px; }
+.tile.tile-small .tile-content p,
+.tile.tile-small .tile-footer .rating { display: none; }
+.tile.tile-small .tile-content h2 { font-size: 0.85rem; line-height: 1.1; }
+.tile.tile-small .tile-footer .badge { font-size: 0.65rem; padding: 1px 3px; }
+
+.tile.tile-medium { grid-column: span 2; grid-row: span 2; padding: 14px; }
+.tile.tile-large { grid-column: span 4; grid-row: span 4; padding: 18px; }
+
+.tile-content h2 { margin: 0; font-weight: 300; font-size: 1.3rem; line-height: 1.2; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+.tile-content p { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+.tile-footer { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.8rem; font-weight: 600; margin-top: auto; }
+.badge { background: rgba(0,0,0,0.6); padding: 3px 6px; display: inline-block; margin: 2px; }
+
+/* ============ PANELS ============ */
+.metro-panel {
+    position: fixed;
+    top: 0;
+    right: -500px;
+    width: 100%;
+    max-width: 480px;
+    height: 100vh;
+    background-color: var(--panel-bg);
+    box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+    transition: right 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+.metro-panel.open { right: 0; }
+
+@media (max-width: 600px) {
+    .metro-panel { max-width: 100%; }
+}
+
+.panel-header {
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #2a2a2a;
+    flex-shrink: 0;
+}
+.panel-header h2 { font-weight: 300; font-size: 1.8rem; margin: 0; flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-content { padding: 25px 30px; flex-grow: 1; overflow-y: auto; }
+.panel-footer { padding: 15px 30px; background: #2a2a2a; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+.form-row { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.form-group { flex: 1; display: flex; flex-direction: column; min-width: 140px; }
+.form-row .metro-input { margin-bottom: 0; }
+label { display: block; margin-bottom: 5px; opacity: 0.8; font-size: 0.85rem; }
+
+.detail-grid p { margin: 10px 0; font-size: 1.05rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
+.detail-grid span { display: block; font-size: 0.75rem; opacity: 0.6; text-transform: uppercase; margin-bottom: 2px; }
+
+/* ============ TAG CHIPS & AUTOCOMPLETE ============ */
+.tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.tag-chip {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    font-family: var(--font-family);
+    border-radius: 0;
+}
+.tag-chip:hover { border-color: var(--accent); }
+.tag-chip.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.tag-search-wrapper {
+    position: relative;
+    margin-bottom: 15px;
+}
+.tag-search-input {
+    background-color: #333;
+    border: 2px solid #444;
+    color: white;
+    padding: 10px 15px;
+    font-size: 1rem;
+    font-family: var(--font-family);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+.tag-search-input:focus {
+    background-color: white;
+    color: black;
+    border-color: var(--accent);
+}
+.tag-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-top: none;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+}
+.tag-dropdown.open { display: block; }
+.tag-dropdown-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.1s;
+}
+.tag-dropdown-item:hover,
+.tag-dropdown-item.highlighted {
+    background: var(--accent);
+    color: white;
+}
+.tag-dropdown-item.create {
+    border-top: 1px solid #555;
+    font-style: italic;
+    color: #aaa;
+}
+.tag-dropdown-item.create:hover,
+.tag-dropdown-item.create.highlighted {
+    background: #339933;
+    color: white;
+}
+.tag-dropdown-item .check {
+    color: var(--accent);
+    font-weight: bold;
+    margin-left: 10px;
+}
+.tag-dropdown-item.selected .check { color: white; }
+.tag-dropdown-empty {
+    padding: 10px 15px;
+    color: #888;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .library-header { padding: 20px var(--pad) 0 var(--pad); }
+    .sort-controls { width: 100%; order: 3; }
+    .metro-select-small { flex-grow: 1; min-width: 0; }
+    .library-actions { width: 100%; justify-content: flex-end; order: 2; }
+    .library-header h1 { order: 1; flex: 1; }
+}
+</style>
 </head>
 <body>
-    <!-- Authentication Overlay -->
-    <div id="auth-overlay" class="metro-auth-overlay">
-        <div class="metro-auth-box">
-            <h2>Sign In</h2>
-            <input type="email" id="email" class="metro-input" placeholder="Email address" required>
-            <input type="password" id="password" class="metro-input" placeholder="Password" required>
-            <button id="login-btn" class="metro-btn">Sign In</button>
-            <p id="auth-error" class="metro-error"></p>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay" class="metro-auth-overlay">
+    <div class="metro-auth-box">
+        <h2>Sign In</h2>
+        <label>Server URL</label>
+        <input type="url" id="server-url" class="metro-input" placeholder="http://127.0.0.1:8090">
+        <p class="metro-hint">Saved locally. Use your server's IP/domain on other devices.</p>
+        <label>Email</label>
+        <input type="email" id="email" class="metro-input" placeholder="Email address" autocomplete="username">
+        <label>Password</label>
+        <input type="password" id="password" class="metro-input" placeholder="Password" autocomplete="current-password">
+        <button id="login-btn" class="metro-btn" style="width:100%">Sign In</button>
+        <p id="auth-error" class="metro-error"></p>
+    </div>
+</div>
+
+<!-- SECTION SELECTOR -->
+<div id="view-selector" class="view-container">
+    <h1>Select Category</h1>
+    <div class="selector-grid">
+        <div class="selector-tile active" id="btn-games"><h2>Games</h2></div>
+        <div class="selector-tile disabled"><h2>Films</h2><p>Coming Soon</p></div>
+        <div class="selector-tile disabled"><h2>Series</h2><p>Coming Soon</p></div>
+        <div class="selector-tile disabled"><h2>Animes</h2><p>Coming Soon</p></div>
+    </div>
+</div>
+
+<!-- GAMES DASHBOARD -->
+<div id="view-dashboard" class="view-container" style="display:none;">
+    <header class="metro-header">
+        <div class="header-left">
+            <button id="back-to-selector-btn" class="back-btn" title="Back">←</button>
+            <h1>Games Dashboard</h1>
+        </div>
+        <div class="header-controls">
+            <span id="connection-status">Connecting...</span>
+            <button id="logout-btn" class="metro-btn-small" style="display:none;">Logout</button>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="dash-tile currently-playing">
+            <h3>Currently Playing</h3>
+            <div id="playing-tiles" class="playing-tile-grid"></div>
+        </div>
+        <div class="dash-tile recommended-next">
+            <h3>Recommended Next</h3>
+            <div id="recommended-content" class="dash-list">Loading...</div>
+        </div>
+        <div class="dash-tile stats">
+            <h3>Library Stats</h3>
+            <div class="stat-line"><span>Total:</span><strong id="stat-total">0</strong></div>
+            <div class="stat-line"><span>Installed:</span><strong id="stat-installed">0</strong></div>
+            <div class="stat-line"><span>Installer Storage:</span><strong id="stat-storage">0 GiB</strong></div>
+        </div>
+        <div class="dash-tile notes-tile">
+            <h3>Notes</h3>
+            <textarea id="dashboard-notes" placeholder="Write your notes here..."></textarea>
+        </div>
+        <div class="dash-tile settings-tile">
+            <h3>Settings</h3>
+            <p style="opacity:0.7;">Configuration options coming soon.</p>
         </div>
     </div>
+</div>
 
-    <div class="metro-container">
-        <header class="metro-header">
-    <h1>Games</h1>
+<!-- GAMES LIBRARY -->
+<div id="view-library" class="slide-up-panel">
+    <header class="library-header">
+        <h1>Games Library</h1>
+        <div class="sort-controls">
+            <label style="margin:0;">Sort:</label>
+            <select id="sort-1" class="metro-select-small">
+                <option value="name">Name</option>
+                <option value="personal_rating" selected>Rating</option>
+                <option value="year">Year</option>
+                <option value="play_status">Status</option>
+            </select>
+            <select id="sort-2" class="metro-select-small">
+                <option value="name">Name</option>
+                <option value="personal_rating">Rating</option>
+                <option value="year" selected>Year</option>
+                <option value="play_status">Status</option>
+            </select>
+            <select id="sort-3" class="metro-select-small">
+                <option value="name" selected>Name</option>
+                <option value="personal_rating">Rating</option>
+                <option value="year">Year</option>
+                <option value="play_status">Status</option>
+            </select>
+        </div>
+        <div class="library-actions">
+            <button id="add-game-btn" class="metro-btn-small" style="display:none;">+ Add Game</button>
+        </div>
+    </header>
 
-    <div class="sort-controls">
-        <label>Sort By:</label>
-        <select id="sort-1" class="metro-select-small">
-            <option value="name">Name</option>
-            <option value="personal_rating" selected>Rating</option>
-            <option value="year">Year</option>
-            <option value="play_status">Status</option>
-        </select>
-        <select id="sort-2" class="metro-select-small">
-            <option value="name">Name</option>
-            <option value="personal_rating">Rating</option>
-            <option value="year" selected>Year</option>
-            <option value="play_status">Status</option>
-        </select>
-        <select id="sort-3" class="metro-select-small">
-            <option value="name" selected>Name</option>
-            <option value="personal_rating">Rating</option>
-            <option value="year">Year</option>
-            <option value="play_status">Status</option>
-        </select>
+    <div class="metro-scroll-area">
+        <main class="tile-grid" id="games-grid"></main>
     </div>
+</div>
 
-    <div class="header-controls">
-        <span id="connection-status">Connecting...</span>
-        <button id="add-game-btn" class="metro-btn-small" style="display: none;">+ Add Game</button>
-        <button id="logout-btn" class="metro-btn-small" style="display: none;">Logout</button>
+<!-- UNIFIED LIBRARY TOGGLE BUTTON -->
+<button id="library-toggle-btn" title="Toggle Library">
+    <span id="toggle-icon">▲</span>
+</button>
+
+<!-- DETAILS PANEL -->
+<div id="details-panel" class="metro-panel">
+    <div class="panel-header">
+        <button class="back-btn" id="close-details">←</button>
+        <h2 id="detail-title">Game Title</h2>
     </div>
-</header>
-
-        <div class="metro-scroll-area">
-            <main class="tile-grid" id="games-grid"></main>
-        </div>
+    <div class="panel-content">
+        <img id="detail-cover" src="" alt="Cover" style="width:100%;max-height:220px;object-fit:cover;display:none;margin-bottom:20px;">
+        <div id="detail-info" class="detail-grid"></div>
     </div>
-
-    <!-- Sliding Details Panel -->
-    <div id="details-panel" class="metro-panel">
-        <div class="panel-header">
-            <button class="back-btn" id="close-details">←</button>
-            <h2 id="detail-title">Game Title</h2>
-        </div>
-        <div class="panel-content">
-            <img id="detail-cover" src="" alt="Cover" style="width:100%; max-height: 200px; object-fit: cover; display: none; margin-bottom: 20px;">
-            <div id="detail-info" class="detail-grid"></div>
-        </div>
-        <div class="panel-footer">
-            <button id="edit-game-btn" class="metro-btn">Edit</button>
-            <button id="delete-game-btn" class="metro-btn delete-btn">Delete</button>
-        </div>
+    <div class="panel-footer">
+        <button id="edit-game-btn" class="metro-btn">Edit</button>
+        <button id="delete-game-btn" class="metro-btn delete-btn">Delete</button>
     </div>
+</div>
 
-    <!-- Sliding Form Panel -->
-    <div id="form-panel" class="metro-panel">
-        <div class="panel-header">
-            <button class="back-btn" id="close-form">←</button>
-            <h2 id="form-title">Add Game</h2>
-        </div>
-        <div class="panel-content">
-            <form id="game-form">
-                <input type="hidden" id="game-id">
-                
-                <label>Name</label>
-                <input type="text" id="game-name" name="name" class="metro-input" required>
-                
-                <label>Publisher</label>
-                <input type="text" id="game-publisher" name="publisher" class="metro-input">
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Year</label>
-                        <input type="number" id="game-year" name="year" class="metro-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Rating (0-10)</label>
-                        <input type="number" id="game-rating" name="personal_rating" class="metro-input" step="0.1" max="10">
-                    </div>
-                </div>
-
-                <!-- Statuses -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Play Status</label>
-                        <select id="game-status" name="play_status" class="metro-input">
-                            <option value="UNPLAYED">Unplayed</option>
-                            <option value="BACKLOG">Backlog</option>
-                            <option value="PLAYING">Playing</option>
-                            <option value="COMPLETED">Completed</option>
-                            <option value="ON_HOLD">On Hold</option>
-                            <option value="ABANDONED">Abandoned</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Ownership</label>
-                        <input type="text" id="game-ownership" name="ownership" class="metro-input">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Acquisition Status</label>
-                        <input type="text" id="game-acquisition-status" class="metro-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Permanent Retention</label>
-                        <div style="margin-top: 10px;">
-                            <input type="checkbox" id="game-permanent-retention"> <label for="game-permanent-retention">Keep Permanently</label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Installation & Storage -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Installer State</label>
-                        <input type="text" id="game-installer-state" class="metro-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Installation State</label>
-                        <input type="text" id="game-installation-state" class="metro-input">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Game Storage (GiB)</label>
-                        <input type="number" id="game-storage" class="metro-input" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label>Installer Storage (GiB)</label>
-                        <input type="number" id="game-installer-storage" class="metro-input" step="0.01">
-                    </div>
-                </div>
-
-                <!-- Platforms -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Original Platform</label>
-                        <input type="text" id="game-original-platform" class="metro-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Runtime Platform</label>
-                        <input type="text" id="game-runtime-platform" class="metro-input">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Rent Platform</label>
-                        <input type="text" id="game-rent-platform" class="metro-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Gamepad Support</label>
-                        <input type="text" id="game-gamepad-support" class="metro-input">
-                    </div>
-                </div>
-
-                <!-- Progress -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Main Story (%)</label>
-                        <input type="number" id="game-main-progress" class="metro-input" min="0" max="100">
-                    </div>
-                    <div class="form-group">
-                        <label>Side Story (%)</label>
-                        <input type="number" id="game-side-progress" class="metro-input" min="0" max="100">
-                    </div>
-                    <div class="form-group">
-                        <label>Full Game (%)</label>
-                        <input type="number" id="game-full-progress" class="metro-input" min="0" max="100">
-                    </div>
-                </div>
-
-                <label>Patch Requirements</label>
-                <input type="text" id="game-patch-requirements" class="metro-input">
-
-                <label>System Tags (Ctrl/Cmd+Click to select multiple)</label>
-                <select id="game-system-tags" class="metro-input" multiple style="height: 100px;">
-                    <option value="FAVORITE">Favorite</option>
-                    <option value="MULTIPLAYER">Multiplayer</option>
-                    <option value="SINGLEPLAYER">Singleplayer</option>
-                    <option value="MODDED">Modded</option>
-                    <option value="EMULATED">Emulated</option>
-                    <!-- Add more options here matching your PocketBase schema values -->
-                </select>
-
-                <label>Cover Image</label>
-                <input type="file" id="game-cover" name="cover" class="metro-input" accept="image/*">
-            </form>
-        </div>
-        <div class="panel-footer">
-            <button id="save-game-btn" class="metro-btn">Save</button>
-        </div>
+<!-- FORM PANEL -->
+<div id="form-panel" class="metro-panel">
+    <div class="panel-header">
+        <button class="back-btn" id="close-form">←</button>
+        <h2 id="form-title">Add Game</h2>
     </div>
+    <div class="panel-content">
+        <form id="game-form">
+            <input type="hidden" id="game-id">
+            <label>Name</label>
+            <input type="text" id="game-name" name="name" class="metro-input" required>
+            <label>Publisher</label>
+            <input type="text" id="game-publisher" name="publisher" class="metro-input">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Year</label>
+                    <input type="number" id="game-year" name="year" class="metro-input">
+                </div>
+                <div class="form-group">
+                    <label>Rating (0-10)</label>
+                    <input type="number" id="game-rating" name="personal_rating" class="metro-input" step="0.1" max="10" min="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Play Status</label>
+                    <select id="game-status" name="play_status" class="metro-input">
+                        <option value="UNPLAYED">Unplayed</option>
+                        <option value="BACKLOG">Backlog</option>
+                        <option value="PLAYING">Playing</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="ON_HOLD">On Hold</option>
+                        <option value="ABANDONED">Abandoned</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ownership</label>
+                    <input type="text" id="game-ownership" name="ownership" class="metro-input">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Acquisition Status</label>
+                    <input type="text" id="game-acquisition-status" class="metro-input">
+                </div>
+                <div class="form-group">
+                    <label>Permanent Retention</label>
+                    <div style="margin-top:10px;">
+                        <input type="checkbox" id="game-permanent-retention">
+                        <label for="game-permanent-retention">Keep Permanently</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Installer State</label>
+                    <input type="text" id="game-installer-state" class="metro-input">
+                </div>
+                <div class="form-group">
+                    <label>Installation State</label>
+                    <input type="text" id="game-installation-state" class="metro-input">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Game Storage (GiB)</label>
+                    <input type="number" id="game-storage" class="metro-input" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Installer Storage (GiB)</label>
+                    <input type="number" id="game-installer-storage" class="metro-input" step="0.01">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Original Platform</label>
+                    <input type="text" id="game-original-platform" class="metro-input">
+                </div>
+                <div class="form-group">
+                    <label>Runtime Platform</label>
+                    <input type="text" id="game-runtime-platform" class="metro-input">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Rent Platform</label>
+                    <input type="text" id="game-rent-platform" class="metro-input">
+                </div>
+                <div class="form-group">
+                    <label>Gamepad Support</label>
+                    <input type="text" id="game-gamepad-support" class="metro-input">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Main Story (%)</label>
+                    <input type="number" id="game-main-progress" class="metro-input" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Side Story (%)</label>
+                    <input type="number" id="game-side-progress" class="metro-input" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Full Game (%)</label>
+                    <input type="number" id="game-full-progress" class="metro-input" min="0" max="100">
+                </div>
+            </div>
+            <label>Patch Requirements</label>
+            <input type="text" id="game-patch-requirements" class="metro-input">
 
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
-    <script src="app.js"></script>
+            <label>System Tags <span style="opacity:0.6; font-size:0.8rem;">(type to search, click to toggle)</span></label>
+            <div id="tag-chips-container" class="tag-chips"></div>
+            <div class="tag-search-wrapper">
+                <input type="text" id="tag-search-input" class="tag-search-input" placeholder="Search or create a tag..." autocomplete="off">
+                <div id="tag-dropdown" class="tag-dropdown"></div>
+            </div>
+
+            <label>Cover Image</label>
+            <input type="file" id="game-cover" name="cover" class="metro-input" accept="image/*">
+        </form>
+    </div>
+    <div class="panel-footer">
+        <button id="save-game-btn" class="metro-btn">Save</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
+<script type="module">
+let pb = null;
+const state = {
+    cachedGames: [],
+    currentActiveGame: null,
+    dynamicTags: new Set(),
+    selectedFormTags: new Set(),
+    libraryOpen: false,
+    inDashboardView: false,
+    metroColors: [
+        '#1ba1e2','#a05000','#339933','#a20025',
+        '#e51400','#00aba9','#d80073','#f09609','#A200FF'
+    ]
+};
+
+const el = (id) => document.getElementById(id);
+const statusText = el('connection-status');
+const viewSelector = el('view-selector');
+const viewDashboard = el('view-dashboard');
+const viewLibrary = el('view-library');
+const detailsPanel = el('details-panel');
+const formPanel = el('form-panel');
+const libraryToggleBtn = el('library-toggle-btn');
+const toggleIcon = el('toggle-icon');
+
+function initPocketBase(url) {
+    pb = new PocketBase(url);
+    window.pb = pb;
+}
+function getServerUrl() {
+    return localStorage.getItem('playstate_server_url') || 'http://127.0.0.1:8090';
+}
+initPocketBase(getServerUrl());
+
+// ============ TAG SYSTEM ============
+function aggregateTagsFromGames(games) {
+    games.forEach(g => {
+        if (Array.isArray(g.system_tags)) {
+            g.system_tags.forEach(t => {
+                if (t && typeof t === 'string' && t.trim() !== '') {
+                    state.dynamicTags.add(t.trim());
+                }
+            });
+        }
+    });
+}
+
+async function fetchSchemaTags() {
+    if (!pb) return;
+    const addTag = (v) => {
+        if (v && typeof v === 'string' && v.trim() !== '') {
+            state.dynamicTags.add(v.trim());
+        }
+    };
+    const extractFromCollection = (collection) => {
+        if (!collection || !Array.isArray(collection.schema)) return false;
+        const tagsField = collection.schema.find(f => f.name === 'system_tags');
+        if (!tagsField) return false;
+        const values = tagsField.options?.values ?? tagsField.values ?? null;
+        if (Array.isArray(values)) {
+            values.forEach(addTag);
+            return true;
+        }
+        return false;
+    };
+
+    try {
+        const collection = await pb.collections.getOne('Games');
+        if (extractFromCollection(collection)) return;
+    } catch (e) { /* continue */ }
+
+    try {
+        const collection = await pb.collections.getOne('games');
+        if (extractFromCollection(collection)) return;
+    } catch (e) { /* continue */ }
+
+    try {
+        const result = await pb.collections.getList(1, 100);
+        for (const c of (result.items || [])) {
+            if (c.name && c.name.toLowerCase() === 'games') {
+                if (extractFromCollection(c)) return;
+            }
+        }
+    } catch (e) { /* continue */ }
+}
+
+function renderTagChips() {
+    const container = el('tag-chips-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const sorted = Array.from(state.dynamicTags).sort((a, b) => a.localeCompare(b));
+    sorted.forEach(tag => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'tag-chip';
+        if (state.selectedFormTags.has(tag)) chip.classList.add('selected');
+        chip.textContent = tag.replace(/_/g, ' ');
+        chip.addEventListener('click', () => {
+            if (state.selectedFormTags.has(tag)) {
+                state.selectedFormTags.delete(tag);
+            } else {
+                state.selectedFormTags.add(tag);
+            }
+            renderTagChips();
+            updateDropdown();
+        });
+        container.appendChild(chip);
+    });
+}
+
+// ============ TAG AUTOCOMPLETE ============
+let dropdownHighlightIndex = -1;
+
+function updateDropdown() {
+    const input = el('tag-search-input');
+    const dropdown = el('tag-dropdown');
+    if (!input || !dropdown) return;
+
+    const query = input.value.trim().toLowerCase();
+    const allTags = Array.from(state.dynamicTags).sort((a, b) => a.localeCompare(b));
+
+    const matches = query === ''
+        ? allTags
+        : allTags.filter(t => t.toLowerCase().includes(query) || t.replace(/_/g, ' ').toLowerCase().includes(query));
+
+    const normalizedQuery = query.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+    const exactMatch = allTags.some(t => t.toLowerCase() === query || t === normalizedQuery);
+
+    dropdown.innerHTML = '';
+    dropdownHighlightIndex = -1;
+
+    if (matches.length === 0 && !normalizedQuery) {
+        dropdown.innerHTML = '<div class="tag-dropdown-empty">No matching tags</div>';
+        dropdown.classList.add('open');
+        return;
+    }
+
+    matches.forEach((tag, i) => {
+        const item = document.createElement('div');
+        item.className = 'tag-dropdown-item';
+        if (state.selectedFormTags.has(tag)) item.classList.add('selected');
+        item.dataset.tag = tag;
+        item.dataset.index = i;
+        item.innerHTML = `<span>${escapeHtml(tag.replace(/_/g, ' '))}</span><span class="check">${state.selectedFormTags.has(tag) ? '✓' : ''}</span>`;
+        item.addEventListener('click', () => {
+            toggleTagSelection(tag);
+            input.value = '';
+            updateDropdown();
+        });
+        item.addEventListener('mouseenter', () => {
+            dropdownHighlightIndex = i;
+            updateHighlight();
+        });
+        dropdown.appendChild(item);
+    });
+
+    if (query !== '' && !exactMatch && normalizedQuery) {
+        const createIdx = matches.length;
+        const createItem = document.createElement('div');
+        createItem.className = 'tag-dropdown-item create';
+        createItem.dataset.index = createIdx;
+        createItem.dataset.create = normalizedQuery;
+        createItem.innerHTML = `<span>+ Create "${escapeHtml(normalizedQuery.replace(/_/g, ' '))}"</span>`;
+        createItem.addEventListener('click', () => {
+            state.dynamicTags.add(normalizedQuery);
+            state.selectedFormTags.add(normalizedQuery);
+            input.value = '';
+            renderTagChips();
+            updateDropdown();
+            dropdown.classList.remove('open');
+        });
+        createItem.addEventListener('mouseenter', () => {
+            dropdownHighlightIndex = createIdx;
+            updateHighlight();
+        });
+        dropdown.appendChild(createItem);
+    }
+
+    dropdown.classList.add('open');
+}
+
+function updateHighlight() {
+    const dropdown = el('tag-dropdown');
+    if (!dropdown) return;
+    const items = dropdown.querySelectorAll('.tag-dropdown-item');
+    items.forEach((item, i) => {
+        item.classList.toggle('highlighted', i === dropdownHighlightIndex);
+    });
+    if (dropdownHighlightIndex >= 0 && items[dropdownHighlightIndex]) {
+        items[dropdownHighlightIndex].scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function toggleTagSelection(tag) {
+    if (state.selectedFormTags.has(tag)) {
+        state.selectedFormTags.delete(tag);
+    } else {
+        state.selectedFormTags.add(tag);
+    }
+    renderTagChips();
+}
+
+function initTagAutocomplete() {
+    const input = el('tag-search-input');
+    const dropdown = el('tag-dropdown');
+    if (!input || !dropdown) return;
+
+    input.addEventListener('focus', () => { updateDropdown(); });
+    input.addEventListener('input', () => { updateDropdown(); });
+
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.tag-dropdown-item');
+        const totalItems = items.length;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!dropdown.classList.contains('open')) { updateDropdown(); return; }
+            dropdownHighlightIndex = (dropdownHighlightIndex + 1) % totalItems;
+            updateHighlight();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            dropdownHighlightIndex = (dropdownHighlightIndex - 1 + totalItems) % totalItems;
+            updateHighlight();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (dropdownHighlightIndex >= 0 && items[dropdownHighlightIndex]) {
+                items[dropdownHighlightIndex].click();
+            } else {
+                const query = input.value.trim();
+                const normalizedQuery = query.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+                if (normalizedQuery) {
+                    const allTags = Array.from(state.dynamicTags);
+                    const existing = allTags.find(t => t.toLowerCase() === query.toLowerCase() || t === normalizedQuery);
+                    if (existing) {
+                        state.selectedFormTags.add(existing);
+                    } else {
+                        state.dynamicTags.add(normalizedQuery);
+                        state.selectedFormTags.add(normalizedQuery);
+                    }
+                    input.value = '';
+                    renderTagChips();
+                    updateDropdown();
+                    dropdown.classList.remove('open');
+                }
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.classList.remove('open');
+            input.blur();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.tag-search-wrapper')) {
+            dropdown.classList.remove('open');
+        }
+    });
+}
+
+// ============ TOGGLE BUTTON & LIBRARY ============
+function updateToggleButton() {
+    if (state.inDashboardView && pb && pb.authStore.isValid) {
+        libraryToggleBtn.classList.add('visible');
+    } else {
+        libraryToggleBtn.classList.remove('visible');
+    }
+    if (state.libraryOpen) {
+        libraryToggleBtn.classList.add('open');
+        toggleIcon.textContent = '▼';
+        libraryToggleBtn.title = 'Close Library';
+    } else {
+        libraryToggleBtn.classList.remove('open');
+        toggleIcon.textContent = '▲';
+        libraryToggleBtn.title = 'Open Library';
+    }
+}
+function openLibrary() {
+    state.libraryOpen = true;
+    viewLibrary.classList.add('open');
+    updateToggleButton();
+}
+function closeLibrary() {
+    state.libraryOpen = false;
+    viewLibrary.classList.remove('open');
+    updateToggleButton();
+}
+
+// ============ AUTH ============
+function initAuth(onSuccess) {
+    const authOverlay = el('auth-overlay');
+    const loginBtn = el('login-btn');
+    const logoutBtn = el('logout-btn');
+    const addGameBtn = el('add-game-btn');
+    const authError = el('auth-error');
+    const passwordInput = el('password');
+    const emailInput = el('email');
+    const serverUrlInput = el('server-url');
+
+    serverUrlInput.value = getServerUrl();
+
+    async function doLogin() {
+        if (authError) authError.innerText = '';
+        const serverUrl = serverUrlInput.value.trim();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!serverUrl) { authError.innerText = 'Please enter a server URL.'; return; }
+        if (!email || !password) { authError.innerText = 'Please enter email and password.'; return; }
+
+        try {
+            loginBtn.innerText = 'Connecting...';
+            loginBtn.disabled = true;
+            initPocketBase(serverUrl);
+            await pb.collection('_superusers').authWithPassword(email, password);
+            localStorage.setItem('playstate_server_url', serverUrl);
+            checkAuth();
+        } catch (err) {
+            console.error('Login error:', err);
+            let msg = 'Invalid credentials.';
+            if (err.isAbort) msg = 'Connection timed out.';
+            else if (err.message && err.message.includes('Failed to fetch')) msg = 'Cannot reach server. Check URL and CORS.';
+            else if (err.status === 400) msg = 'Invalid credentials.';
+            authError.innerText = msg;
+        } finally {
+            loginBtn.innerText = 'Sign In';
+            loginBtn.disabled = false;
+        }
+    }
+
+    loginBtn.addEventListener('click', doLogin);
+    passwordInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doLogin(); } });
+    emailInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); passwordInput.focus(); } });
+    serverUrlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); emailInput.focus(); } });
+
+    logoutBtn.addEventListener('click', () => { pb.authStore.clear(); checkAuth(); });
+
+    function checkAuth() {
+        if (pb.authStore.isValid) {
+            authOverlay.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+            addGameBtn.style.display = 'inline-block';
+            statusText.innerText = 'Connected';
+            updateToggleButton();
+            if (onSuccess) onSuccess();
+            return true;
+        } else {
+            authOverlay.style.display = 'flex';
+            logoutBtn.style.display = 'none';
+            addGameBtn.style.display = 'none';
+            statusText.innerText = 'Please sign in.';
+            viewSelector.style.display = 'flex';
+            viewDashboard.style.display = 'none';
+            state.inDashboardView = false;
+            closeLibrary();
+            el('games-grid').innerHTML = '';
+            updateToggleButton();
+            return false;
+        }
+    }
+    return checkAuth();
+}
+
+// ============ LIBRARY / GRID ============
+function sortGames(games) {
+    const s1 = el('sort-1').value;
+    const s2 = el('sort-2').value;
+    const s3 = el('sort-3').value;
+    return [...games].sort((a, b) => {
+        let r = compare(a, b, s1);
+        if (r !== 0) return r;
+        r = compare(a, b, s2);
+        if (r !== 0) return r;
+        return compare(a, b, s3);
+    });
+}
+function compare(a, b, key) {
+    let va = a[key], vb = b[key];
+    if (va == null) va = '';
+    if (vb == null) vb = '';
+    if (['personal_rating','year','game_storage_gib','full_game_progress'].includes(key)) {
+        return (vb !== '' ? Number(vb) : -Infinity) - (va !== '' ? Number(va) : -Infinity);
+    }
+    return String(va).localeCompare(String(vb));
+}
+
+function createTileElement(game, index, isMini = false) {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    const bgColor = state.metroColors[index % state.metroColors.length];
+    const rating = (game.personal_rating != null && game.personal_rating !== '') ? Number(game.personal_rating) : null;
+
+    if (!isMini) {
+        if (rating !== null && rating > 7) tile.classList.add('tile-large');
+        else if (rating !== null && rating >= 5) tile.classList.add('tile-medium');
+        else tile.classList.add('tile-small');
+    } else {
+        tile.classList.add('tile-small');
+    }
+
+    let bgStyle = `background:${bgColor};`;
+    if (game.cover) {
+        const filename = Array.isArray(game.cover) ? game.cover[0] : game.cover;
+        const imgUrl = pb.files.getUrl(game, filename, { thumb: '400x400' });
+        bgStyle = `background-image:url('${imgUrl}');background-size:cover;background-position:center;`;
+        tile.classList.add('has-cover');
+    }
+    const playStatus = game.play_status ? game.play_status.replace(/_/g,' ') : 'UNPLAYED';
+
+    tile.innerHTML = `
+        <div class="tile-bg" style="${bgStyle}"></div>
+        <div class="tile-content">
+            <h2>${escapeHtml(game.name || 'Unknown')}</h2>
+            <p>${escapeHtml(game.publisher || '')} ${game.year ? '('+game.year+')' : ''}</p>
+            <div class="tile-extra">
+                ${game.runtime_platform ? 'Platform: '+escapeHtml(game.runtime_platform)+'<br>' : ''}
+                ${game.installation_state ? 'State: '+escapeHtml(game.installation_state) : ''}
+            </div>
+        </div>
+        <div class="tile-footer">
+            <span class="badge">${playStatus}</span>
+            <span class="rating">${rating !== null ? rating+'/10' : ''}</span>
+        </div>
+    `;
+    tile.addEventListener('click', () => openDetails(game));
+    return tile;
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderGrid(games) {
+    const grid = el('games-grid');
+    grid.innerHTML = '';
+    games.forEach((g, i) => grid.appendChild(createTileElement(g, i, false)));
+}
+
+function renderPlayingTiles(games) {
+    const container = el('playing-tiles');
+    container.innerHTML = '';
+    const playing = games.filter(g => g.play_status === 'PLAYING');
+    if (playing.length === 0) {
+        container.innerHTML = '<p style="opacity:0.6;padding:10px;grid-column:1/-1;">Not playing anything right now.</p>';
+        return;
+    }
+    playing.forEach((g, i) => container.appendChild(createTileElement(g, i, true)));
+}
+
+function initLibrary() {
+    const scrollArea = document.querySelector('.metro-scroll-area');
+    if (scrollArea) {
+        scrollArea.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                if (scrollArea.scrollWidth > scrollArea.clientWidth) {
+                    e.preventDefault();
+                    scrollArea.scrollLeft += e.deltaY;
+                }
+            }
+        }, { passive: false });
+    }
+    ['sort-1','sort-2','sort-3'].forEach(id => {
+        el(id).addEventListener('change', () => {
+            if (state.cachedGames.length > 0) renderGrid(sortGames(state.cachedGames));
+        });
+    });
+}
+
+// ============ DASHBOARD ============
+function updateDashboardStats(games) {
+    el('stat-total').innerText = games.length;
+    let installedCount = 0, installerStorage = 0;
+    const backlogGames = [];
+    games.forEach(g => {
+        if (g.installation_state && g.installation_state.toUpperCase() === 'INSTALLED') installedCount++;
+        if (g.installer_storage_gib) installerStorage += Number(g.installer_storage_gib);
+        if (g.play_status === 'UNPLAYED' || g.play_status === 'BACKLOG') backlogGames.push(g);
+    });
+    el('stat-installed').innerText = installedCount;
+    el('stat-storage').innerText = installerStorage.toFixed(2) + ' GiB';
+
+    renderPlayingTiles(games);
+
+    const recEl = el('recommended-content');
+    if (backlogGames.length > 0) {
+        backlogGames.sort((a,b) => (b.personal_rating || 0) - (a.personal_rating || 0));
+        const rec = backlogGames[0];
+        recEl.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'dash-item';
+        div.innerHTML = `<strong>${escapeHtml(rec.name)}</strong><br><small>${(rec.play_status||'').replace(/_/g,' ')}</small>`;
+        div.addEventListener('click', () => openDetails(rec));
+        recEl.appendChild(div);
+    } else {
+        recEl.innerHTML = '<p style="opacity:0.7;">You have no backlog games! 🎉</p>';
+    }
+}
+
+function initDashboard() {
+    const notes = el('dashboard-notes');
+    notes.value = localStorage.getItem('playstate_notes') || '';
+    notes.addEventListener('input', e => localStorage.setItem('playstate_notes', e.target.value));
+}
+
+// ============ PANELS ============
+function openDetails(game) {
+    state.currentActiveGame = game;
+    el('detail-title').innerText = game.name || 'Game Details';
+    const coverImg = el('detail-cover');
+    if (game.cover) {
+        const filename = Array.isArray(game.cover) ? game.cover[0] : game.cover;
+        coverImg.src = pb.files.getUrl(game, filename);
+        coverImg.style.display = 'block';
+    } else {
+        coverImg.style.display = 'none';
+    }
+    const tagsHtml = Array.isArray(game.system_tags) && game.system_tags.length
+        ? game.system_tags.map(t => `<span class="badge">${escapeHtml(t.replace(/_/g,' '))}</span>`).join('')
+        : '<span style="opacity:0.5;">—</span>';
+
+    el('detail-info').innerHTML = `
+        <p><span>Publisher</span>${escapeHtml(game.publisher || '-')}</p>
+        <p><span>Release Year</span>${escapeHtml(String(game.year || '-'))}</p>
+        <p><span>Rating</span>${game.personal_rating != null ? game.personal_rating+'/10' : '-'}</p>
+        <p><span>Ownership</span>${escapeHtml(game.ownership || '-')}</p>
+        <p><span>Acquisition Status</span>${game.acquisition_status ? escapeHtml(game.acquisition_status.replace(/_/g,' ')) : '-'}</p>
+        <p><span>Play Status</span>${game.play_status ? escapeHtml(game.play_status.replace(/_/g,' ')) : '-'}</p>
+        <p><span>Installer State</span>${game.installer_state ? escapeHtml(game.installer_state.replace(/_/g,' ')) : '-'}</p>
+        <p><span>Installation State</span>${game.installation_state ? escapeHtml(game.installation_state.replace(/_/g,' ')) : '-'}</p>
+        <p><span>Gamepad Support</span>${escapeHtml(game.gamepad_support || '-')}</p>
+        <p><span>Rent Platform</span>${escapeHtml(game.rent_platform || '-')}</p>
+        <p><span>Runtime Platform</span>${escapeHtml(game.runtime_platform || '-')}</p>
+        <p><span>Original Platform</span>${escapeHtml(game.original_platform || '-')}</p>
+        <p><span>Permanent Retention</span>${game.parmanent_retention ? 'Yes' : 'No'}</p>
+        <p><span>Game Storage</span>${game.game_storage_gib ? game.game_storage_gib+' GiB' : '-'}</p>
+        <p><span>Installer Storage</span>${game.installer_storage_gib ? game.installer_storage_gib+' GiB' : '-'}</p>
+        <p><span>Main Story Progress</span>${game.main_story_progress != null ? game.main_story_progress+'%' : '-'}</p>
+        <p><span>Side Story Progress</span>${game.side_story_progress != null ? game.side_story_progress+'%' : '-'}</p>
+        <p><span>Full Game Progress</span>${game.full_game_progress != null ? game.full_game_progress+'%' : '-'}</p>
+        <p><span>Patch Requirements</span>${escapeHtml(game.patch_requirements || '-')}</p>
+        <p><span>System Tags</span>${tagsHtml}</p>
+    `;
+    formPanel.classList.remove('open');
+    detailsPanel.classList.add('open');
+}
+
+function populateForm(game) {
+    const setVal = (id, val) => { const e = el(id); if (e) e.value = val != null ? val : ''; };
+    setVal('game-id', game.id);
+    setVal('game-name', game.name);
+    setVal('game-publisher', game.publisher);
+    setVal('game-year', game.year);
+    setVal('game-rating', game.personal_rating);
+    setVal('game-ownership', game.ownership);
+    setVal('game-acquisition-status', game.acquisition_status);
+    setVal('game-installer-state', game.installer_state);
+    setVal('game-installation-state', game.installation_state);
+    setVal('game-status', game.play_status);
+    setVal('game-gamepad-support', game.gamepad_support);
+    setVal('game-rent-platform', game.rent_platform);
+    setVal('game-storage', game.game_storage_gib);
+    setVal('game-installer-storage', game.installer_storage_gib);
+    setVal('game-main-progress', game.main_story_progress);
+    setVal('game-side-progress', game.side_story_progress);
+    setVal('game-full-progress', game.full_game_progress);
+    setVal('game-runtime-platform', game.runtime_platform);
+    setVal('game-original-platform', game.original_platform);
+    setVal('game-patch-requirements', game.patch_requirements);
+    el('game-permanent-retention').checked = Boolean(game.parmanent_retention);
+
+    state.selectedFormTags = new Set();
+    if (Array.isArray(game.system_tags)) {
+        game.system_tags.forEach(t => {
+            if (t) { state.dynamicTags.add(t); state.selectedFormTags.add(t); }
+        });
+    }
+    renderTagChips();
+    const searchInput = el('tag-search-input');
+    if (searchInput) searchInput.value = '';
+    updateDropdown();
+}
+
+function initPanels() {
+    el('close-details').addEventListener('click', () => detailsPanel.classList.remove('open'));
+
+    el('delete-game-btn').addEventListener('click', async () => {
+        if (state.currentActiveGame && confirm(`Delete ${state.currentActiveGame.name}?`)) {
+            try {
+                await pb.collection('Games').delete(state.currentActiveGame.id);
+                detailsPanel.classList.remove('open');
+                loadGames();
+            } catch (e) { alert('Failed to delete: ' + e.message); }
+        }
+    });
+
+    el('add-game-btn').addEventListener('click', () => {
+        state.currentActiveGame = null;
+        el('game-form').reset();
+        el('game-id').value = '';
+        el('form-title').innerText = 'Add Game';
+        state.selectedFormTags = new Set();
+        renderTagChips();
+        const searchInput = el('tag-search-input');
+        if (searchInput) searchInput.value = '';
+        el('tag-dropdown').classList.remove('open');
+        detailsPanel.classList.remove('open');
+        formPanel.classList.add('open');
+    });
+
+    el('edit-game-btn').addEventListener('click', () => {
+        el('form-title').innerText = 'Edit Game';
+        populateForm(state.currentActiveGame);
+        detailsPanel.classList.remove('open');
+        formPanel.classList.add('open');
+    });
+
+    el('close-form').addEventListener('click', () => formPanel.classList.remove('open'));
+
+    el('save-game-btn').addEventListener('click', async () => {
+        const form = el('game-form');
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+        const formData = new FormData();
+        const append = (id, name, isNum = false) => {
+            const e = el(id);
+            if (e && e.value !== '') formData.append(name, isNum ? Number(e.value) : e.value);
+        };
+        append('game-name','name');
+        append('game-publisher','publisher');
+        append('game-year','year',true);
+        append('game-rating','personal_rating',true);
+        append('game-ownership','ownership');
+        append('game-acquisition-status','acquisition_status');
+        append('game-installer-state','installer_state');
+        append('game-installation-state','installation_state');
+        append('game-status','play_status');
+        append('game-gamepad-support','gamepad_support');
+        append('game-rent-platform','rent_platform');
+        append('game-storage','game_storage_gib',true);
+        append('game-installer-storage','installer_storage_gib',true);
+        append('game-main-progress','main_story_progress',true);
+        append('game-side-progress','side_story_progress',true);
+        append('game-full-progress','full_game_progress',true);
+        append('game-runtime-platform','runtime_platform');
+        append('game-original-platform','original_platform');
+        append('game-patch-requirements','patch_requirements');
+        formData.append('parmanent_retention', el('game-permanent-retention').checked);
+        state.selectedFormTags.forEach(tag => formData.append('system_tags', tag));
+
+        const fileInput = el('game-cover');
+        if (fileInput.files.length > 0) formData.append('cover', fileInput.files[0]);
+
+        const gameId = el('game-id').value;
+        const saveBtn = el('save-game-btn');
+        try {
+            saveBtn.innerText = 'Saving...';
+            saveBtn.disabled = true;
+            if (gameId) await pb.collection('Games').update(gameId, formData);
+            else await pb.collection('Games').create(formData);
+            formPanel.classList.remove('open');
+            loadGames();
+        } catch (err) {
+            alert('Failed to save: ' + (err.message || 'Unknown error'));
+        } finally {
+            saveBtn.innerText = 'Save';
+            saveBtn.disabled = false;
+        }
+    });
+}
+
+// ============ LOAD GAMES ============
+async function loadGames() {
+    try {
+        if (statusText) statusText.innerText = 'Syncing...';
+        const records = await pb.collection('Games').getFullList({ sort: '-created' });
+        state.cachedGames = records;
+        aggregateTagsFromGames(records);
+        renderTagChips();
+        if (statusText) statusText.innerText = 'Connected · ' + records.length + ' games';
+        updateDashboardStats(records);
+        renderGrid(sortGames(records));
+    } catch (err) {
+        if (statusText) statusText.innerText = 'Error: ' + (err.message || 'Could not load');
+    }
+}
+window.loadGames = loadGames;
+
+// ============ NAVIGATION ============
+function initNavigation() {
+    el('btn-games').addEventListener('click', () => {
+        viewSelector.style.display = 'none';
+        viewDashboard.style.display = 'flex';
+        state.inDashboardView = true;
+        updateToggleButton();
+        if (state.cachedGames.length === 0) loadGames();
+    });
+    el('back-to-selector-btn').addEventListener('click', () => {
+        viewDashboard.style.display = 'none';
+        viewSelector.style.display = 'flex';
+        state.inDashboardView = false;
+        closeLibrary();
+        updateToggleButton();
+    });
+    libraryToggleBtn.addEventListener('click', () => {
+        if (state.libraryOpen) closeLibrary(); else openLibrary();
+    });
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+    initNavigation();
+    initDashboard();
+    initLibrary();
+    initPanels();
+    initTagAutocomplete();
+    renderTagChips();
+    initAuth(async () => {
+        await fetchSchemaTags();
+        renderTagChips();
+        if (viewDashboard.style.display === 'flex') {
+            state.inDashboardView = true;
+            updateToggleButton();
+            loadGames();
+        }
+    });
+});
+</script>
 </body>
 </html>
