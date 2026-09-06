@@ -7,5 +7,8 @@ PlayState allows users to easily track, rate, and organize their media consumpti
 ## Who is it for
 This system is designed for media enthusiasts, cinephiles, and gamers who want a unified, private, and customizable platform to keep track of their backlogs and completed titles without relying on multiple third-party services.
 
+## Progress
+Currently it only works for games. Support for other movies, shows and anime will be touched on later.
+
 ## Notes
 **Disclaimer:** This project were generated or assisted by AI.
